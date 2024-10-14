@@ -4,6 +4,17 @@ import { getAnthropicModel } from '~/lib/.server/llm/model';
 import { MAX_TOKENS } from './constants';
 import { getSystemPrompt } from './prompts';
 
+import { NodeSDK } from "@opentelemetry/sdk-node";
+import { getNodeAutoInstrumentations } from "@opentelemetry/auto-instrumentations-node";
+import { LangfuseExporter } from "langfuse-vercel";
+
+const sdk = new NodeSDK({
+  traceExporter: new LangfuseExporter(),
+  instrumentations: [getNodeAutoInstrumentations()],
+});
+ 
+sdk.start();
+
 interface ToolResult<Name extends string, Args, Result> {
   toolCallId: string;
   toolName: Name;
@@ -28,6 +39,9 @@ export function streamText(messages: Messages, env: Env, options?: StreamingOpti
     maxTokens: MAX_TOKENS,
     headers: {
       'anthropic-beta': 'max-tokens-3-5-sonnet-2024-07-15',
+    },
+    experimental_telemetry: {
+      isEnabled: true
     },
     messages: convertToCoreMessages(messages),
     ...options,
